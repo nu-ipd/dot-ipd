@@ -9,7 +9,9 @@ jobs:
     timeout-minutes: 3
     steps:
     - name: Fetch your code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Configure CMake
       run: |
         mkdir build
