@@ -1,0 +1,5 @@
+#pragma once
+
+#define LIBIPD_MAJOR_VERSION 2020
+#define LIBIPD_MINOR_VERSION 1
+#define LIBIPD_PATCH_VERSION 1
