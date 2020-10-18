@@ -31,19 +31,19 @@ void free(void*);
 
 
 /*
- * DEBUGGING
+ * TRACING
  */
 
 // Like printf(3), but prints to stderr instead of stdout. This exists
-// mainly to be enabled as `debug` by #defining ENABLE_DEBUGF before
+// mainly to be enabled as `tracef` by #defining ENABLE_TRACEF before
 // including this header.
 void eprintf(const char* format, ...)
 __attribute__((format(printf, 1, 2)));
 
 // Like eprintf, but is a no-op by default, and only prints if you
-// #define ENABLE_DEBUGF above the #include of this file.
-#ifdef ENABLE_DEBUGF
-#   define  debugf           eprintf
+// #define ENABLE_TRACEF above the #include of this file.
+#ifdef ENABLE_TRACEF
+#   define  tracef           eprintf
 #else
-#   define  debugf(...)      do {} while (false)
+#   define  tracef(...)      do {} while (false)
 #endif

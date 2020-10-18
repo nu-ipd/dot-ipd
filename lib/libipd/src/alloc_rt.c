@@ -43,7 +43,7 @@ static bool trace_enabled(void)
     return trace_out != NULL;
 }
 
-static void tracef(char const* format, ...)
+static void alloc_tracef(char const* format, ...)
 {
     if (!trace_enabled()) return;
 
@@ -56,7 +56,7 @@ static void tracef(char const* format, ...)
 
 void* rtipd_calloc(size_t nmemb, size_t size)
 {
-    tracef("calloc(%zu, %zu)", nmemb, size);
+    alloc_tracef("calloc(%zu, %zu)", nmemb, size);
     return calloc(nmemb, size);
 }
 
@@ -78,26 +78,26 @@ waspfill(size_t n, char mem[n], char const* pat)
 
 void* rtipd_malloc(size_t size)
 {
-    tracef("malloc(%zu)", size);
+    alloc_tracef("malloc(%zu)", size);
     return malloc(size);
 }
 
 void rtipd_free(void *ptr)
 {
     free(ptr);
-    tracef("free(%p)", ptr);
+    alloc_tracef("free(%p)", ptr);
 }
 
 void* rtipd_realloc(void *ptr, size_t size)
 {
     void* result = realloc(ptr, size);
-    tracef("realloc(%p, %zu) => %p", ptr, size, result);
+    alloc_tracef("realloc(%p, %zu) => %p", ptr, size, result);
     return result;
 }
 
 void* rtipd_reallocf(void *ptr, size_t size)
 {
-    tracef("reallocf(%p, %zu)", ptr, size);
+    alloc_tracef("reallocf(%p, %zu)", ptr, size);
     void* result = realloc(ptr, size);
     if (!result) free(ptr);
     return result;
