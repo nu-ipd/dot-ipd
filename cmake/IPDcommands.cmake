@@ -103,13 +103,24 @@ function(_ipd_add_program target)
     set_property(TARGET ${target} PROPERTY CXX_EXTENSIONS Off)
 
     if (pa_ASAN)
-        target_compile_options(${target} PRIVATE "-fsanitize=address")
-        target_link_options(${target} PRIVATE "-fsanitize=address")
+        if (WIN32)
+            message(WARNING "ASAN not supported on Windows")
+        else ()
+            target_compile_options(${target} PRIVATE "-fsanitize=address")
+            target_link_options(${target} PRIVATE "-fsanitize=address")
+        endif ()
     endif ()
 
     if (pa_UBSAN)
-        target_compile_options(${target} PRIVATE "-fsanitize=undefined")
-        target_link_options(${target} PRIVATE "-fsanitize=undefined")
+        if (WIN32)
+            target_compile_options(${target}
+                PRIVATE
+                "-fsanitize=undefined"
+                "-fsanitize-undefined-trap-on-error")
+        else ()
+            target_compile_options(${target} PRIVATE "-fsanitize=undefined")
+            target_link_options(${target} PRIVATE "-fsanitize=undefined")
+        endif ()
     endif ()
 endfunction(_ipd_add_program)
 
