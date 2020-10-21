@@ -1,0 +1,98 @@
+.\" Manual page for ipd.h
+.de my_br
+.  PD 0
+.  PP
+.  PD
+..
+.\"
+.TH CHECK 3 "January 29, 2020" "Jesse A. Tov"
+.\"
+.SH "NAME"
+.BR CHECK ", " CHECK_CHAR ", " CHECK_INT ", "
+.BR CHECK_UINT ", " CHECK_SIZE ", " CHECK_DOUBLE ", "
+.BR CHECK_STRING ", " CHECK_POINTER
+\- simple unit testing
+.\"
+.SH "SYNOPSIS"
+.B "#include <ipd.h>
+.P
+.my_br
+\fBCHECK\fR( \fIbool_expression\fR );
+.P
+.my_br
+\fBCHECK_CHAR\fR( \fIchar_expression\fR, \fIchar_expression\fR );
+.P
+.my_br
+\fBCHECK_INT\fR( \fIint_expression\fR, \fIint_expression\fR );
+.P
+.my_br
+\fBCHECK_UINT\fR( \fIunsigned_expression\fR, \fIunsigned_expression\fR );
+.P
+.my_br
+\fBCHECK_SIZE\fR( \fIsize_expression\fR, \fIsize_expression\fR );
+.P
+.my_br
+\fBCHECK_STRING\fR( \fIstring_expression\fR, \fIstring_expression\fR );
+.P
+.my_br
+\fBCHECK_POINTER\fR( \fIptr_expression\fR, \fIptr_expression\fR );
+.\"
+.SH "DESCRIPTION"
+Each of these macros asserts the truth of some condition, registering
+a passed test if the condition is true, or a failed test if the
+condition is false. They also register an exit handler, in order to
+print a summary of the test results on program exit.
+.P
+The first macro form,
+.BR CHECK (),
+takes the condition that is expected to hold as its only argument. The
+test passes if the argument expression evaluates to a true value.
+.P
+The remaining forms perform comparisons between the values of two
+expressions; except for
+.BR CHECK_STRING (),
+they succeed when the values are equal. When a
+comparison test fails, it prints the two values that differed
+unexpectedly. For example, to test a factorial function \fIfact\fR,
+you could write
+.RS 4
+.PP
+\fBCHECK_UINT\fR( fact(5), 120 );
+.RE
+.P
+The
+.BR CHECK_STRING ()
+form does not compare the pointer values it is given, but the
+string objects they point to.
+It expects to receive valid pointers to 0-terminated \fBchar\fR arrays,
+which it compares using
+.BR strcmp (3).
+A test passes when the pointers are both non-NULL and point to equal
+strings. NULL pointers passed to
+.BR CHECK_STRING ()
+do not result in undefined behavior, because it checks for NULL before
+dereferencing them; however, NULLs are considered a failed test. To
+check a value that you expect to be NULL, use
+.BR CHECK_POINTER ().
+.\"
+.SH "ERRORS"
+Each argument to the
+.BR CHECK_STRING ()
+form must evaluate either to a pointer to a 0-terminated \fBchar\fB
+array or to a NULL pointer. If given a non-null pointer that
+doesn't point to a valid C-style string, its behavior is undefined.
+.\"
+.SH "BUGS"
+The
+.BR CHECK_INT ()
+and
+.BR CHECK_UINT ()
+macros also work on types \fBlong\fR and
+\fBunsigned long\fR.
+.\"
+.SH "AUTHOR"
+\fIjesse@cs\.northwestern\.edu\fR
+.\"
+.SH "SEE ALSO"
+.BR assert (3),
+.BR strcmp (3)

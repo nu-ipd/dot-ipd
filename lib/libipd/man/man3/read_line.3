@@ -1,0 +1,88 @@
+.\" Manual page for ipd.h
+.de my_br
+.  PD 0
+.  PP
+.  PD
+..
+.\"
+.TH READ_LINE 3 "January 18, 2019" "Jesse A. Tov"
+.\"
+.SH "NAME"
+.BR read_line ", " fread_line ", " prompt_line
+\- easy line-based input
+.\"
+.SH "SYNOPSIS"
+.B "#include <ipd.h>
+.P
+.I "char *"
+.my_br
+\fBfread_line\fR(\fIFILE * stream\fR);
+.P
+.I "char *"
+.my_br
+\fBread_line\fR(\fIvoid\fR);
+.P
+.I "char *"
+.my_br
+\fBprompt_line\fR(\fIconst char * format\fR, \fI...\fR);
+.\"
+.SH "DESCRIPTION"
+These three functions read a line at a time either from
+.BR stdin (4),
+as
+.B read_line
+and
+.B prompt_line
+do, or a from file handle
+.IR stream ,
+as
+.B fread_line
+does.
+.PP
+The pointer returned by these functions is allocated
+using
+.BR malloc (3),
+and thus must be freed using
+.BR free (3)
+when you are done with it. This is because unlike other input functions,
+they allocate their own buffer, growing it as necessary to accept any
+amount of input (limited, of course, by the computer's memory).
+.PP
+All three functions read until reaching either end-of-file
+or a newline character. The newline character, if present, is not
+included in the resulting string. If no characters can be read
+before end-of-file is reached, the functions return a NULL pointer.
+.PP
+Additionally,
+.BR prompt_line ()
+prints a prompt to
+.BR stdout (4)
+and flushes it to ensure it is displayed immediately even if it doesn't
+end with a newline.
+.BR prompt_line ()
+takes a format string and arguments to interpolate, in the style of
+.BR printf (3).
+.SH "ERRORS"
+If any of the three functions fails to allocate memory,
+it prints an error message
+to
+.BR stderr (4)
+and calls
+.BR exit (3)
+with an error code of 1.
+.\"
+.SH "BUGS"
+Almost all uses of
+.B prompt_line
+in IPD projects or exercises are bugs, because none of the
+assignments specify prompts, and all are strict about output.
+.\"
+.SH "AUTHOR"
+\fIjesse@cs\.northwestern\.edu\fR
+.\"
+.SH "SEE ALSO"
+.BR fflush (3),
+.BR free (3),
+.BR getline (3),
+.BR malloc (3),
+.BR printf (3)
