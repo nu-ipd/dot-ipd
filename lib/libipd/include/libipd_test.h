@@ -3,10 +3,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Initializes the test system. This ensures that you see test results
-// even if the program exits before getting to the first check.
-void start_testing(void);
-
 // CHECK(A) checks that `A` evaluates to true. (Returns value of `A` in
 // case you want it.)
 //
@@ -41,25 +37,39 @@ void start_testing(void);
 //   CHECK_UINT( strlen(s), 12 );
 //   CHECK_STRING( s + 2, "llo, world" );
 //
-#define CHECK_CHAR(...)     DISPATCH_CHECK(char, __VA_ARGS__)
-#define CHECK_INT(...)      DISPATCH_CHECK(long, __VA_ARGS__)
-#define CHECK_LONG(...)     DISPATCH_CHECK(long, __VA_ARGS__)
-#define CHECK_UINT(...)     DISPATCH_CHECK(size, __VA_ARGS__)
-#define CHECK_ULONG(...)    DISPATCH_CHECK(size, __VA_ARGS__)
-#define CHECK_SIZE(...)     DISPATCH_CHECK(size, __VA_ARGS__)
-#define CHECK_DOUBLE(...)   DISPATCH_CHECK(double, __VA_ARGS__)
-#define CHECK_STRING(...)   DISPATCH_CHECK(string, __VA_ARGS__)
-#define CHECK_POINTER(...)  DISPATCH_CHECK(pointer, __VA_ARGS__)
+#define CHECK_CHAR(A,B)     DISPATCH_CHECK(char, A,B)
+#define CHECK_INT(A,B)      DISPATCH_CHECK(long, A,B)
+#define CHECK_LONG(A,B)     DISPATCH_CHECK(long, A,B)
+#define CHECK_UINT(A,B)     DISPATCH_CHECK(size, A,B)
+#define CHECK_ULONG(A,B)    DISPATCH_CHECK(size, A,B)
+#define CHECK_SIZE(A,B)     DISPATCH_CHECK(size, A,B)
+#define CHECK_DOUBLE(A,B)   DISPATCH_CHECK(double, A,B)
+#define CHECK_STRING(A,B)   DISPATCH_CHECK(string, A,B)
+#define CHECK_POINTER(A,B)  DISPATCH_CHECK(pointer, A,B)
 
+// RUN_TEST takes a function with no arguments and no results, and
+// calls it as a test. (This means it prints progress and success or
+// failure information.)
+#define RUN_TEST(F)         libipd_do_run_test((F),#F,__FILE__,__LINE__)
+
+// Initializes the test system. The first check will call this
+// automatically, but calling it yourself will ensure that you see the
+// empty test results if your test program exits before getting to the
+// its check.
+void start_testing(void);
+
+
+/*
+ * IMPLEMENTATION DETAILS. The full API is documented above. Below this
+ * point are implementation details that you don't need to understand in
+ * order to use this library.
+ */
 
 // Helper for dispatching type-specific checks above to functions below.
 // Note that `T` stands for “tag,” not “type,” since it might not be a type.
 #define DISPATCH_CHECK(T, A, B) \
     libipd_do_check_##T((A),(B),#A,#B,__FILE__,__LINE__)
 
-#ifndef LIBIPD_RAW_EXIT
-#  define exit(E)  libipd_exit_rt(E)
-#endif
 
 // Helper function used by `CHECK` macro above.
 bool libipd_do_check(
@@ -123,3 +133,18 @@ bool libipd_do_check_pointer(
         char const* file,
         int line);
 
+// Helper function used by `RUN_TEST` macro above.
+//
+bool libipd_do_run_test(
+        void (*test_fn)(void),
+        char const* source_expr,
+        char const* file,
+        int line);
+
+// We're going to override exit(3) with a function that complains if
+// it's called in the midst of a test.
+#ifndef LIBIPD_RAW_EXIT
+#  define exit(E)  libipd_exit_rt(E)
+#endif
+
+_Noreturn void libipd_exit_rt(int);

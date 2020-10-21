@@ -7,7 +7,7 @@ include(IPDcommands)
 enable_testing()
 
 find_local_package(Catch2 .ipd/lib/catch  VERSION 2020.1)
-find_local_package(libIPD .ipd/lib/libipd VERSION 2020.0)
+find_local_package(libIPD .ipd/lib/libipd VERSION 2020.3)
 
 include_directories(src)
 

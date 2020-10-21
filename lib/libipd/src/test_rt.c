@@ -1,6 +1,11 @@
+#define LIBIPD_RAW_ALLOC
 #define LIBIPD_RAW_EXIT
+
+#define _XOPEN_SOURCE 700
+
 #include "libipd_test.h"
 #include "libipd_io.h"
+#include "test_reporting.h"
 
 #include <ctype.h>
 #include <unistd.h>
@@ -8,37 +13,66 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#define NORMAL  "\33[0m"
+#define RED     "\33[0;31m"
+#define GREEN   "\33[0;32m"
+#define RVRED   "\33[0;41;37m"
+
 static bool atexit_installed = false;
-static bool tests_enabled = false;
-static int pass_count = 0;
-static int fail_count = 0;
+static bool tests_enabled    = false;
+static bool has_run_tests    = false;
+
+static unsigned pass_count   = 0;
+static unsigned fail_count   = 0;
+static unsigned error_count  = 0;
 
 static void print_test_results(void)
 {
-    int check_count = pass_count + fail_count;
-    FILE* fout = fail_count? stderr : stdout;
+    unsigned check_count = pass_count + fail_count + error_count;
+    FILE* fout = fail_count || error_count ? stderr : stdout;
+    bool const use_color = isatty(fileno(fout));
+    char const* label_style = has_run_tests ? "test" : "check";
 
     fprintf(fout, "\n");
 
     if (! check_count) {
         fprintf(fout, "No checks.\n");
-    } else if (pass_count == 0 || fail_count == 0) {
-        const char* descr = pass_count? "passed" : "failed";
+        return;
+    }
+
+    if (error_count) {
+        if (use_color) fprintf(fout, RVRED);
+        fprintf(fout,
+                "*** %d %s%s could not be completed due to errors.",
+                error_count,
+                label_style,
+                error_count == 1 ? "" : "s");
+        if (use_color) fprintf(fout, NORMAL);
+    }
+
+    if (!error_count && !(pass_count && fail_count)) {
+        const char* descr = pass_count
+            ? use_color ? GREEN "passed" NORMAL : "passed"
+            : use_color ? RED   "failed" NORMAL : "failed";
 
         switch (check_count) {
             case 1:
-                fprintf(fout, "The only check %s.\n", descr);
+                fprintf(fout, "The only %s %s.\n", label_style, descr);
                 break;
             case 2:
-                fprintf(fout, "Both checks %s.\n", descr);
+                fprintf(fout, "Both %ss %s.\n", label_style, descr);
                 break;
             default:
-                fprintf(fout, "All %d checks %s.\n", check_count, descr);
+                fprintf(fout, "All %d %ss %s.\n",
+                        check_count, label_style, descr);
                 break;
         }
     } else {
-        fprintf(fout, "%d of %d checks passed.\n",
-                pass_count, check_count);
+        fprintf(fout, "%d of %d %ss passed.\n",
+                pass_count, check_count, label_style);
     }
 }
 
@@ -47,8 +81,9 @@ static void exit_hook_function(void)
     if (tests_enabled) {
         print_test_results();
 
-        if (fail_count) {
-            _exit(fail_count);
+        unsigned failures = fail_count + error_count;
+        if (failures) {
+            _exit(failures);
         }
     }
 }
@@ -71,7 +106,9 @@ void start_testing(void)
     tests_enabled = true;
 }
 
-bool log_check(bool condition, const char* file, int line)
+#define log_check rtipd_test_log_check
+
+bool rtipd_test_log_check(bool condition, const char* file, int line)
 {
     start_testing();
 
@@ -83,6 +120,17 @@ bool log_check(bool condition, const char* file, int line)
     }
 
     return condition;
+}
+
+void rtipd_test_log_error(
+        char const* context,
+        char const* file,
+        int line)
+{
+    start_testing();
+
+    ++error_count;
+    eprintf("\nError in %s (%s:%d):\n", context, file, line);
 }
 
 static const char* c_escape_of_char(char c) {
@@ -131,6 +179,76 @@ static void eprintf_string_literal(const char* s) {
     } else {
         eprintf("(null)");
     }
+}
+
+static void color_word(const char* color, const char* word)
+{
+    printf("%s%s%s.\n",
+            color ? color : "",
+            word,
+            color ? NORMAL : "");
+    fflush(stdout);
+}
+
+bool libipd_do_run_test(
+        void (*test_fn)(void),
+        char const* source_expr,
+        char const* file,
+        int line)
+{
+    start_testing();
+    has_run_tests = true;
+
+    bool const use_color = isatty(fileno(stdout));
+
+    printf("%s... ", source_expr);
+    fflush(stdout);
+
+    pid_t pid = fork();
+    if (pid < 0) goto bad_error;
+
+    if (pid == 0) {
+        pass_count = fail_count = error_count = 0;
+
+        test_fn();
+
+        // Don't run our exit handler in here.
+        tests_enabled = false;
+
+        if (error_count) exit(2);
+        else if (fail_count) exit(1);
+        else exit(0);
+    }
+
+    int status;
+    int res = waitpid(pid, &status, 0);
+    if (res < 0) goto bad_error;
+
+    if (WIFEXITED(status)) {
+        switch (WEXITSTATUS(status)) {
+        case 0:
+            color_word(use_color ? GREEN : NULL, "passed");
+            ++pass_count;
+            return true;
+
+        case 1:
+            printf("\n%s ", source_expr);
+            color_word(use_color ? RED : NULL, "failed");
+            ++fail_count;
+            return false;
+        }
+    }
+
+    printf("\n%s ", source_expr);
+    color_word(use_color ? RVRED : NULL, "errored");
+    ++error_count;
+    return false;
+
+bad_error:
+    printf("\nunexpected error:\n");
+    fflush(stdout);
+    perror("RUN_TEST");
+    exit(11);
 }
 
 bool libipd_do_check(

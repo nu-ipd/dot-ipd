@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.10)
 #
 function(add_c_program name)
     _ipd_add_program(${name} ${ARGN})
-    target_link_libraries(${name} libipd)
+    target_link_libraries(${name} ipd)
 endfunction(add_c_program)
 
 

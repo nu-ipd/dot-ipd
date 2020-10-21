@@ -1,3 +1,6 @@
+#define LIBIPD_RAW_ALLOC
+#define LIBIPD_RAW_EXIT
+
 #include "libipd_io.h"
 
 #include <stdarg.h>

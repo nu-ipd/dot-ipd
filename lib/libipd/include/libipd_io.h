@@ -1,5 +1,7 @@
-#pragma once
+#ifndef _LIBIPD_IO_H_
+#define _LIBIPD_IO_H_
 
+#include "libipd_alloc.h"
 #include <stdio.h>
 
 // Reads a line of input on stdin. The returned string is allocated by
@@ -31,7 +33,7 @@ void free(void*);
 
 
 /*
- * TRACING
+ * DEBUGGING
  */
 
 // Like printf(3), but prints to stderr instead of stdout. This exists
@@ -47,3 +49,5 @@ __attribute__((format(printf, 1, 2)));
 #else
 #   define  tracef(...)      do {} while (false)
 #endif
+
+#endif // _LIBIPD_IO_H_
