@@ -5,68 +5,65 @@
 .  PD
 ..
 .\"
-.TH DEBUGF 3 "January 18, 2019" "Jesse A. Tov"
+.TH TRACEF 3 "October 20, 2020" "libipd 2020.3" "IPD"
 .\"
 .SH "NAME"
-.B debugf
+.B tracef
 \- a simple tracing facility
 .\"
 .SH "SYNOPSIS"
-.B "#define ENABLE_DEBUGF"
-.my_br
+.nf
+.B "#define ENABLE_TRACEF"
 .B "#include <ipd.h>"
-.P
+.PP
 .I void
-.my_br
-\fBdebugf\fR(\fIconst char * format\fR, \fI...\fR);
+\fBtracef\fR( \fIconst char * format\fR, \fI...\fR );
+.fi
 .\"
 .SH "DESCRIPTION"
 This macro provides a simple tracing facility that is easily
 turned on and off without removing the tracing statements.
 The arguments to
-.BR debugf ()
+.BR tracef ()
 are the same as the arguments to
 .BR printf (3),
 but there are two main differences:
 .IP \(bu
-.BR debugf ()
+.BR tracef ()
 prints to
 .BR stderr (4),
 not
 .BR stdout (4).
 .IP \(bu
-.BR debugf ()
+.BR tracef ()
 only produces output if the C preprocessor macro
-.B ENABLE_DEBUGF
+.B ENABLE_TRACEF
 is \fB#define\fRd before the \fI<ipd.h>\fR header is
 \fB#include\fRd. Thus, to turn on tracing, put the \fB#define\fR above
 the \fB#include\fR; to disable it, remove or comment out the
 \fB#define\fR.
 .PP
 Essentially, this means you can do \[lq]printf\[rq]\-style debugging to
-see what's going on, and then disable the output without having to
+see what\(aqs going on, and then disable the output without having to
 remove the all the calls to
-.BR debugf ().
+.BR tracef ().
 .\"
 .SH "EXAMPLE"
-// Comment out next line to suppress output:
-.my_br
-.B "#define ENABLE_DEBUGF"
-.my_br
-.B "#include <ipd.h>
 .PP
-\fIint\fR main()
-.my_br
+.nf
+// Comment out next line to suppress output:
+.B "#define ENABLE_TRACEF"
+.B "#include <ipd.h>"
+.PP
+\fIint\fR main( \fIvoid\fR )
 {
-.my_br
     \fIint\fR x = 3, y = 4;
-.my_br
-    \fBdebugf\fR("%d + %d == %d\\n", x, y, x + y)\;
-.my_br
+    \fBtracef\fR("%d + %d == %d\\n", x, y, x + y)\;
 }
+.fi
 .\"
 .SH "AUTHOR"
-\fIjesse@cs\.northwestern\.edu\fR
+Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"
 .BR fprintf (3),

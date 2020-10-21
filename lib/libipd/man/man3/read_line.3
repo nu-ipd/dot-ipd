@@ -1,30 +1,23 @@
 .\" Manual page for ipd.h
-.de my_br
-.  PD 0
-.  PP
-.  PD
-..
-.\"
-.TH READ_LINE 3 "January 18, 2019" "Jesse A. Tov"
+.TH READ_LINE 3 "January 18, 2019" "libipd 2020.3" "IPD"
 .\"
 .SH "NAME"
 .BR read_line ", " fread_line ", " prompt_line
 \- easy line-based input
 .\"
 .SH "SYNOPSIS"
+.nf
 .B "#include <ipd.h>"
 .P
 .I "char *"
-.my_br
-\fBfread_line\fR(\fIFILE * stream\fR);
+\fBfread_line\fR( \fIFILE * stream\fR );
 .P
 .I "char *"
-.my_br
-\fBread_line\fR(\fIvoid\fR);
+\fBread_line\fR( \fIvoid\fR );
 .P
 .I "char *"
-.my_br
-\fBprompt_line\fR(\fIconst char * format\fR, \fI...\fR);
+\fBprompt_line\fR( \fIconst char * format\fR, \fI...\fR );
+.fi
 .\"
 .SH "DESCRIPTION"
 These three functions read a line at a time either from
@@ -46,7 +39,7 @@ and thus must be freed using
 .BR free (3)
 when you are done with it. This is because unlike other input functions,
 they allocate their own buffer, growing it as necessary to accept any
-amount of input (limited, of course, by the computer's memory).
+amount of input (limited, of course, by the computer\(aqs memory).
 .PP
 All three functions read until reaching either end-of-file
 or a newline character. The newline character, if present, is not
@@ -57,8 +50,8 @@ Additionally,
 .BR prompt_line ()
 prints a prompt to
 .BR stdout (4)
-and flushes it to ensure it is displayed immediately even if it doesn't
-end with a newline.
+and flushes it to ensure it is displayed immediately even if it
+doesn\(aqt end with a newline.
 .BR prompt_line ()
 takes a format string and arguments to interpolate, in the style of
 .BR printf (3).
@@ -74,11 +67,11 @@ with an error code of 1.
 .SH "BUGS"
 Almost all uses of
 .B prompt_line
-in IPD projects or exercises are bugs, because none of the
+on IPD homework assignments are bugs, because none of the
 assignments specify prompts, and all are strict about output.
 .\"
 .SH "AUTHOR"
-\fIjesse@cs\.northwestern\.edu\fR
+Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"
 .BR fflush (3),

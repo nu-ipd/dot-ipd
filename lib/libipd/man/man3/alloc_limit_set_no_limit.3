@@ -1,124 +1,132 @@
-.Dd October 20, 2020
-.Dt IPD_ALLOC_LIMIT 3
-.Os IPD
+.\" Manual page for ipd_alloc_limit.h
+.TH IPD_ALLOC_LIMIT 3 "October 20, 2020" "libipd 2020.3" "IPD"
 .\"
-.Sh NAME
-.Nm alloc_limit_set_no_limit ,
-.Nm alloc_limit_set_peak ,
-.Nm alloc_limit_set_total
-.Nd simulated out-of-memory errors
+.SH NAME
+.BR alloc_limit_set_no_limit ", "
+.BR alloc_limit_set_peak ", "
+.BR alloc_limit_set_total
+\- simulated out-of-memory errors
 .\"
-.Sh SYNOPSIS
-.In ipd.h
-.In ipd_alloc_limit.h
-.Ft void
-.Fn alloc_limit_set_peak "size_t size"
-.Ft void
-.Fn alloc_limit_set_total "size_t size"
-.Ft void
-.Fn alloc_limit_set_no_limit void
+.SH SYNOPSIS
+.nf
+.B "#include <ipd.h>"
+.B "#include <ipd_alloc_limit.h>"
+.P
+.I void
+\fBalloc_limit_set_peak\fR( \fIsize_t size\fR );
+.P
+.I void
+\fBalloc_limit_set_total\fR( \fIsize_t size\fR );
+.P
+.I void
+\fBalloc_limit_set_no_limit\fR( \fIvoid\fR );
+.fi
 .\"
-.Sh DESCRIPTION
-.Pp
+.SH DESCRIPTION
 The purpose of these functions is to simulate out-of-memory errors,
 so that you can test how your code handles them. In particular, these
 functions let you place a (temporary) limit on heap allocation, which
 will cause
-.Xr malloc 3
+.BR malloc (3)
 to return
-.B NULL
+.I NULL
 rather than exceed the limit.
-.Pp
+.PP
 This API supports setting two kinds of allocation limits:
-.Bl -bullet
-.It
+.IP \(bu
 A
-.Em "peak allocation limit"
+.I "peak allocation limit"
 caps the total size of the heap, which means that each allocated
 object counts against the limit only until it is deallocated.
-.It
+.IP \(bu
 A
-.Em "total allocation limit"
+.I "total allocation limit"
 caps the total number of bytes allocated, which means that
 allocations are charged against the limit, but deallocations do not
 restore the limit.
-.El
-.Pp
+.PP
 To set a peak allocation limit of
-.Fa n
+.I n
 bytes, call
-.Fn alloc_limit_set_peak n Ns \&;
+.BR alloc_limit_set_peak (\fIn\fR);
 to set a total allocation limit of
-.Fa n
+.I n
 bytes, call
-.Fn alloc_limit_set_total n Ns \&.
+.BR alloc_limit_set_total (\fIn\fR).
 To remove the current allocation limit, if any, and restore
-.Xr malloc 3 Ns 's
+.BR malloc (3)\(aqs
 usual behavior, call
-.Fn alloc_limit_set_no_limit Ns \&.
-.Pp
+.BR alloc_limit_set_no_limit ().
+.PP
 When an allocation limit is set, it applies only to future allocations.
 This means that when you call
-.Fn alloc_limit_set_peak
+.B alloc_limit_set_peak
 or
-.Fn alloc_limit_set_total Ns ,
-earlier are forgotten and will not count against the new allocation limit.
-.Pp
+.BR alloc_limit_set_total ,
+earlier allocations are forgotten and will not count against
+the new allocation limit.
+.PP
 Note that the accounting required by the above functions happens
 only in files where
-.In ipd.h
-is included. This means that you need to include
-.In ipd.h
+.B <ipd.h>
+is
+.BR #include d.
+This means that you need
+.B "#include <ipd.h>"
 in every source file that performs allocation or deallocation
 in order to use these functions effectively.
 .\"
-.Sh ENVIRONMENT
-.Pp
+.SH ENVIRONMENT
 The functions documented herein are suitable for unit-testing of
-individual functions, but not for testing a whole program's
+individual functions, but not for testing a whole program\(aqs
 out-of-memory behavior. For testing a whole program you can set a peak
 or total allocation limit at program startup by defining an environment
 variable from outside your program.
-.Pp
+.PP
 In particular, these two environment variables may be defined
 in order to set a allocation limit:
-.Bl -tag -width ".Ev RTIPD_ALLOC_LIMIT_TOTAL"
-.It Ev RTIPD_ALLOC_LIMIT_PEAK
-Sets a peak allocation limit.
-.It Ev RTIPD_ALLOC_LIMIT_TOTAL
-Sets a total allocation limit.
-.El
-.Pp
+.IP \(bu
+.I RTIPD_ALLOC_LIMIT_PEAK
+\- Sets a peak allocation limit.
+.IP \(bu
+.I RTIPD_ALLOC_LIMIT_TOTAL
+\- Sets a total allocation limit.
+.PP
 The value of either variable may
 be a number to specify the limit in bytes,
 or a number followed by the letter
-.Em K ,
-.Em M ,
+.IR K ,
+.IR M ,
 or
-.Em G
+.I G
 to specify the limit in KiB, MiB, or GiB, respectively.
-.Pp
+.PP
 For example, to run the program
-.Ic ./count
+.I ./count
 with a peak allocation limit of 500 bytes, you could run
-.Pp
-.Dl % RTIPD_ALLOC_LIMIT_PEAK=500 ./count
-.Pp
+.RS 4
+.PP
+% \fIRTIPD_ALLOC_LIMIT_PEAK\fR=\fI500\fR \fB./count\fR
+.RE
+.PP
 If both of the above environment variables are set then
-.Ev RTIPD_ALLOC_LIMIT_TOTAL
+.I RTIPD_ALLOC_LIMIT_TOTAL
 takes precedence.
 .\"
-.Sh BUGS
+.SH BUGS
 Limiting peak memory makes deallocation slow.
 The treatment of
-.Xr realloc 3
+.BR realloc (3)
 is confusing.
 And probably several others.
 .\"
-.Sh SEE ALSO
-.Xr calloc 3 ,
-.Xr free 3 ,
-.Xr malloc 3 ,
-.Xr realloc 3 ,
-.Xr reallocf 3
+.SH "AUTHOR"
+Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
+.\"
+.SH "SEE ALSO"
+.BR calloc (3),
+.BR free (3),
+.BR malloc (3),
+.BR realloc (3),
+.BR reallocf (3)
 .\"

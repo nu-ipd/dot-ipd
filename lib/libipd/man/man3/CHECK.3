@@ -1,11 +1,5 @@
 .\" Manual page for ipd.h
-.de my_br
-.  PD 0
-.  PP
-.  PD
-..
-.\"
-.TH CHECK 3 "January 29, 2020" "Jesse A. Tov"
+.TH CHECK 3 "January 29, 2020" "libipd 2020.3" "IPD"
 .\"
 .SH "NAME"
 .BR CHECK ", " CHECK_CHAR ", " CHECK_INT ", "
@@ -14,28 +8,23 @@
 \- simple unit testing
 .\"
 .SH "SYNOPSIS"
+.nf
 .B "#include <ipd.h>"
 .P
-.my_br
 \fBCHECK\fR( \fIbool_expression\fR );
 .P
-.my_br
 \fBCHECK_CHAR\fR( \fIchar_expression\fR, \fIchar_expression\fR );
 .P
-.my_br
 \fBCHECK_INT\fR( \fIint_expression\fR, \fIint_expression\fR );
 .P
-.my_br
 \fBCHECK_UINT\fR( \fIunsigned_expression\fR, \fIunsigned_expression\fR );
 .P
-.my_br
 \fBCHECK_SIZE\fR( \fIsize_expression\fR, \fIsize_expression\fR );
 .P
-.my_br
 \fBCHECK_STRING\fR( \fIstring_expression\fR, \fIstring_expression\fR );
 .P
-.my_br
 \fBCHECK_POINTER\fR( \fIptr_expression\fR, \fIptr_expression\fR );
+.fi
 .\"
 .SH "DESCRIPTION"
 Each of these macros asserts the truth of some condition, registering
@@ -64,7 +53,7 @@ The
 .BR CHECK_STRING ()
 form does not compare the pointer values it is given, but the
 string objects they point to.
-It expects to receive valid pointers to 0-terminated \fBchar\fR arrays,
+It expects to receive valid pointers to 0-terminated \fIchar\fR arrays,
 which it compares using
 .BR strcmp (3).
 A test passes when the pointers are both non-NULL and point to equal
@@ -78,9 +67,9 @@ check a value that you expect to be NULL, use
 .SH "ERRORS"
 Each argument to the
 .BR CHECK_STRING ()
-form must evaluate either to a pointer to a 0-terminated \fBchar\fB
+form must evaluate either to a pointer to a 0-terminated \fIchar\fR
 array or to a NULL pointer. If given a non-null pointer that
-doesn't point to a valid C-style string, its behavior is undefined.
+doesn\(aqt point to a valid C-style string, its behavior is undefined.
 .\"
 .SH "BUGS"
 The
@@ -91,7 +80,7 @@ macros also work on types \fBlong\fR and
 \fBunsigned long\fR.
 .\"
 .SH "AUTHOR"
-\fIjesse@cs\.northwestern\.edu\fR
+Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"
 .BR assert (3),
