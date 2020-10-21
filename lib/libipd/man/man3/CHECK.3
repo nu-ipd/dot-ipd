@@ -10,19 +10,19 @@
 .SH "SYNOPSIS"
 .nf
 .B "#include <ipd.h>"
-.P
+.PP
 \fBCHECK\fR( \fIbool_expression\fR );
-.P
+.PP
 \fBCHECK_CHAR\fR( \fIchar_expression\fR, \fIchar_expression\fR );
-.P
+.PP
 \fBCHECK_INT\fR( \fIint_expression\fR, \fIint_expression\fR );
-.P
+.PP
 \fBCHECK_UINT\fR( \fIunsigned_expression\fR, \fIunsigned_expression\fR );
-.P
+.PP
 \fBCHECK_SIZE\fR( \fIsize_expression\fR, \fIsize_expression\fR );
-.P
+.PP
 \fBCHECK_STRING\fR( \fIstring_expression\fR, \fIstring_expression\fR );
-.P
+.PP
 \fBCHECK_POINTER\fR( \fIptr_expression\fR, \fIptr_expression\fR );
 .fi
 .\"
@@ -31,12 +31,12 @@ Each of these macros asserts the truth of some condition, registering
 a passed test if the condition is true, or a failed test if the
 condition is false. They also register an exit handler, in order to
 print a summary of the test results on program exit.
-.P
+.PP
 The first macro form,
 .BR CHECK (),
 takes the condition that is expected to hold as its only argument. The
 test passes if the argument expression evaluates to a true value.
-.P
+.PP
 The remaining forms perform comparisons between the values of two
 expressions; except for
 .BR CHECK_STRING (),
@@ -48,7 +48,7 @@ you could write
 .PP
 \fBCHECK_UINT\fR( fact(5), 120 );
 .RE
-.P
+.PP
 The
 .BR CHECK_STRING ()
 form does not compare the pointer values it is given, but the
