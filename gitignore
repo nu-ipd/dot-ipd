@@ -2,6 +2,8 @@
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
+.idea/**/shelf/
+.idea/**/workspace.xml
 
 # build directories:
 build/
