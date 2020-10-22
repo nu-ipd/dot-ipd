@@ -13,12 +13,9 @@ jobs:
       with:
         submodules: recursive
     - name: Configure CMake
-      run: |
-        mkdir build
-        cd build
-        cmake ..
+      run: cmake -S . -B build -G 'Unix Makefiles'
     - name: Build
-      run: cmake --build build
+      run: cmake --build build -- -j$(nproc)
     - name: Run tests
       run: |
         cd build
