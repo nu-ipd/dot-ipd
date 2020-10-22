@@ -1,0 +1,15 @@
+# User-specific CLion (IDEA) settings:
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+
+# build directories:
+build/
+build.*/
+cmake-build-*/
+
+# Mac OS Finder configuration:
+.DS_Store
+
+# backups:
+*~
