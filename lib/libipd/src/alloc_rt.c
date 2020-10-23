@@ -25,35 +25,15 @@
 #define EV_PEAK2  "RTIPD_HEAP_LIMIT"
 #define EV_TOTAL2 "RTIPD_ALLOC_LIMIT"
 
-// A linked list mapping pointers to allocation sizes.
-struct alloc_record
-{
-    void*  pointer;
-    size_t size;
-    struct alloc_record* next;
-};
-typedef struct alloc_record* alloc_list_t;
+///
+/// TRACING
+///
 
-// A map from every allocated pointer to its size.
-static alloc_list_t allocation_list = NULL;
+static bool trace_is_init = false;
+static FILE* trace_out    = NULL;
 
-// The state of the allocation limit system:
-static enum {
-    UNINITIALIZED,
-    NO_LIMIT,
-    LIMIT_TOTAL, // limit total bytes allocated ever (free irrelevant)
-    LIMIT_PEAK   // limit total bytes allocated at once (free helps)
-} alloc_limit_state = UNINITIALIZED;
-
-// Remaining bytes allowed to allocate. If the state is LIMIT_PEAK then
-// free() adds to this, whereas with LIMIT_TOTAL this number is monotone
-// decreasing (unless you reset it explicitly).
-static size_t bytes_remaining;
-
-
-static FILE* trace_out = NULL;
-
-static void close_trace_out(void)
+static void
+close_trace_out(void)
 {
     if (trace_out) {
         fclose(trace_out);
@@ -61,8 +41,8 @@ static void close_trace_out(void)
     }
 }
 
-static bool trace_is_init = false;
-static void tracing_init_once(void)
+static void
+tracing_init_once(void)
 {
     if (trace_is_init) return;
 
@@ -84,15 +64,17 @@ static void tracing_init_once(void)
     trace_is_init = true;
 }
 
-static bool trace_enabled(void)
+static bool
+alloc_trace_is_enabled(void)
 {
-    if (!trace_is_init) tracing_init_once();
+    tracing_init_once();
     return trace_out != NULL;
 }
 
-static void alloc_tracef(char const* format, ...)
+static void
+alloc_tracef(char const* format, ...)
 {
-    if (!trace_enabled()) return;
+    if (!alloc_trace_is_enabled()) return;
 
     va_list ap;
     va_start(ap, format);
@@ -100,6 +82,35 @@ static void alloc_tracef(char const* format, ...)
     va_end(ap);
     fprintf(trace_out, "\n");
 }
+
+
+///
+/// ALLOCATION INSTRUMENTATION
+///
+
+// A linked list mapping pointers to allocation sizes.
+typedef struct alloc_record
+{
+    void*  pointer;
+    size_t size;
+    struct alloc_record* next;
+}       *alloc_list_t;
+
+// The state of the allocation limit system:
+static enum {
+    UNINITIALIZED,
+    NO_LIMIT,
+    LIMIT_TOTAL, // limit total bytes allocated ever (free irrelevant)
+    LIMIT_PEAK   // limit total bytes allocated at once (free helps)
+}       alloc_limit_state = UNINITIALIZED;
+
+// Remaining bytes allowed to allocate. If the state is LIMIT_PEAK then
+// free() adds to this, whereas with LIMIT_TOTAL this number is monotone
+// decreasing (unless you reset it explicitly).
+static size_t bytes_remaining;
+
+// A map from every allocated pointer to its size.
+static alloc_list_t allocation_list = NULL;
 
 static noreturn void
 bad_env_var(char const* name, char const* value)
@@ -109,8 +120,8 @@ bad_env_var(char const* name, char const* value)
     exit(254);
 }
 
-static bool get_limit(char const* const name,
-                               size_t* const out)
+static bool
+get_limit(char const* const name, size_t* const out)
 {
     char *const original = getenv(name),
          *begin = original,
@@ -150,14 +161,15 @@ static bool get_limit(char const* const name,
     }
 }
 
-static void alloc_limit_init_once(void)
+static void
+alloc_limit_init_once(void)
 {
     size_t n;
 
-    if (get_limit(EV_PEAK, &n) || get_limit(EV_PEAK2, &n))
+    if (get_limit(EV_TOTAL, &n) || get_limit(EV_TOTAL2, &n))
         alloc_limit_set_total(n);
 
-    else if (get_limit(EV_TOTAL, &n) || get_limit(EV_TOTAL2, &n))
+    else if (get_limit(EV_PEAK, &n) || get_limit(EV_PEAK2, &n))
         alloc_limit_set_peak(n);
 
     else
@@ -167,7 +179,8 @@ static void alloc_limit_init_once(void)
 #define ENSURE_ALLOC_DEBUG_INIT() \
     if (alloc_limit_state == UNINITIALIZED) alloc_limit_init_once()
 
-static alloc_list_t find_alloc_record(void* p)
+static alloc_list_t
+find_alloc_record(void* p)
 {
     for (alloc_list_t cur = allocation_list; cur; cur = cur->next) {
         if (cur->pointer == p) {
@@ -178,7 +191,8 @@ static alloc_list_t find_alloc_record(void* p)
     return NULL;
 }
 
-static size_t lookup_and_forget_size(void* p)
+static size_t
+lookup_and_forget_size(void* p)
 {
     size_t size = 0;
 
@@ -263,7 +277,12 @@ static void alloc_limit_will_free(void* p)
 }
 
 
-static void* quiet_calloc(size_t nmemb, size_t size)
+///
+/// WRAPPERS FOR MALLOC/FREE API
+///
+
+static inline void*
+quiet_calloc(size_t nmemb, size_t size)
 {
     if (size <= SIZE_MAX / nmemb &&
             alloc_limit_may_alloc(nmemb * size))
@@ -272,7 +291,8 @@ static void* quiet_calloc(size_t nmemb, size_t size)
         return NULL;
 }
 
-static void* quiet_malloc(size_t size)
+static inline void*
+quiet_malloc(size_t size)
 {
     if (alloc_limit_may_alloc(size))
         return alloc_limit_did_alloc(malloc(size), size);
@@ -280,7 +300,8 @@ static void* quiet_malloc(size_t size)
         return NULL;
 }
 
-static void quiet_free(void *ptr)
+static inline void
+quiet_free(void *ptr)
 {
     if (ptr) {
         alloc_limit_will_free(ptr);
@@ -288,7 +309,8 @@ static void quiet_free(void *ptr)
     }
 }
 
-static void* realloc_with_total_limit(void *ptr, size_t new_size)
+static inline void*
+realloc_with_total_limit(void *ptr, size_t new_size)
 {
     if (alloc_limit_may_alloc(new_size))
         return alloc_limit_did_alloc(realloc(ptr, new_size), new_size);
@@ -296,7 +318,8 @@ static void* realloc_with_total_limit(void *ptr, size_t new_size)
         return NULL;
 }
 
-static void* realloc_with_peak_limit(void *ptr, size_t new_size)
+static inline void*
+realloc_with_peak_limit(void *ptr, size_t new_size)
 {
     alloc_list_t node = find_alloc_record(ptr);
     size_t old_size   = node ? node->size : 0;
@@ -322,7 +345,8 @@ static void* realloc_with_peak_limit(void *ptr, size_t new_size)
     return ptr;
 }
 
-static void* quiet_realloc(void *ptr, size_t new_size)
+static inline void*
+quiet_realloc(void *ptr, size_t new_size)
 {
     if (!ptr) return quiet_malloc(new_size);
 
@@ -341,12 +365,23 @@ static void* quiet_realloc(void *ptr, size_t new_size)
     }
 }
 
-static void* quiet_reallocf(void *ptr, size_t new_size)
+static inline void*
+quiet_reallocf(void *ptr, size_t new_size)
 {
     void* result = quiet_realloc(ptr, new_size);
     if (!result) quiet_free(ptr);
     return result;
 }
+
+
+/////
+///// PUBLIC API FUNCTIONS
+/////
+
+
+///
+/// TRACING WRAPPERS
+///
 
 void* rtipd_calloc(size_t nmemb, size_t size)
 {
@@ -387,6 +422,11 @@ void* rtipd_reallocf(void *ptr, size_t size)
 
     return quiet_reallocf(ptr, size);
 }
+
+
+///
+/// SIMULATING ALLOCATION FAILURE
+///
 
 void alloc_limit_set_no_limit(void)
 {

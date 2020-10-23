@@ -2,36 +2,74 @@
 #include <assert.h>
 #include <limits.h>
 #include <unistd.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define ARRAY_LEN(A)      (sizeof (A) / sizeof (*(A)))
-#define TEMPNAM_TEMPLATE  "%s/%s.XXXXXX"
-#define TMPNAM_TEMPLATE   (P_tmpdir "/tmpnam.XXXXXX")
+#define TEMPNAM_TEMPLATE  "%s/%sXXXXXX"
 
-static_assert( sizeof TMPNAM_TEMPLATE < L_tmpnam,
-               "This shim won't work here" );
-
-static char*
+static bool
 mkstemp_close_unlink(char *buf, char const* who)
 {
     int fd = mkstemp(buf);
-    if (fd < 0) return NULL;
+    if (fd < 0) false;
 
     if (close(fd) < 0) perror(who);
     if (unlink(buf) < 0) perror(who);
 
-    return buf;
+    return true;
 }
 
 static char*
-real_tmpnam(char* buf) {
+real_tmpnam(char* buf)
+{
     static char my_buf[L_tmpnam];
     if (!buf) buf = my_buf;
 
-    strcpy(buf, TMPNAM_TEMPLATE);
-    return mkstemp_close_unlink(buf, "tmpnam");
+    snprintf(buf, L_tmpnam, TEMPNAM_TEMPLATE, P_tmpdir, "tmp");
+    bool success = mkstemp_close_unlink(buf, "tmpnam");
+
+    return success? buf : NULL;
+}
+
+static char*
+vmsprintf(size_t guess,
+          const char* restrict format,
+          va_list ap)
+{
+    char buffer[guess];
+
+    va_list ap1;
+    va_copy(ap1, ap);
+    size_t needed = vsnprintf(buffer, sizeof buffer, format, ap1);
+
+    char* result = malloc(needed);
+    if (!result) goto finish;
+
+    if (sizeof buffer < needed) {
+        vsnprintf(result, needed, format, ap);
+    } else {
+        memcpy(result, buffer, needed);
+    }
+
+finish:
+    va_end(ap1);
+    return result;
+}
+
+static char*
+msprintf(size_t guess,
+         const char* restrict format,
+         ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    char* result = vmsprintf(guess, format, ap);
+    va_end(ap);
+    return result;
 }
 
 static char*
@@ -40,19 +78,16 @@ try_tempnam(char const* dir, char const* pfx)
     if (!dir) return NULL;
     if (!pfx) pfx = "tempnam";
 
-    char buf1[2 * sizeof TEMPNAM_TEMPLATE];
-    size_t needed = snprintf(buf1, sizeof buf1,
-            TEMPNAM_TEMPLATE, dir, pfx);
+    char* result = msprintf(256, TEMPNAM_TEMPLATE, dir, pfx);
+    if (!result) return NULL;
 
-    char* buf2 = malloc(needed);
-    if (!buf2) return NULL;
+    bool success = mkstemp_close_unlink(result, "tempnam");
+    if (!success) {
+        free(result);
+        return NULL;
+    }
 
-    if (needed > sizeof buf1)
-        snprintf(buf2, needed, TEMPNAM_TEMPLATE, dir, pfx);
-    else
-        memcpy(buf2, buf1, needed);
-
-    return mkstemp_close_unlink(buf2, "tempnam");
+    return result;
 }
 
 char*

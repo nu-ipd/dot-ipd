@@ -6,6 +6,12 @@ bool rtipd_test_log_check(
         int line);
 
 void rtipd_test_log_error(
-        char const* context,
-        char const* file,
-        int line);
+        char const* const file,
+        int         const line,
+        char const* const context,
+        char const* const message);
+
+void rtipd_test_log_perror(
+        char const* const file,
+        int         const line,
+        char const* const context);

@@ -12,15 +12,13 @@ struct buffer
 static inline bool
 balloc(struct buffer* buf, size_t n)
 {
-    char* data = malloc(n);
-    if (!data) {
-        buf->data = NULL;
+    buf->data = malloc(n);
+    if (! buf->data) {
         return false;
     }
 
     buf->cap = n;
     buf->fill = 0;
-    buf->data = data;
     return true;
 }
 

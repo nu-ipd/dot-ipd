@@ -8,6 +8,7 @@
 #include "test_reporting.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,14 +124,30 @@ bool rtipd_test_log_check(bool condition, const char* file, int line)
 }
 
 void rtipd_test_log_error(
-        char const* context,
-        char const* file,
-        int line)
+        char const* const file,
+        int         const line,
+        char const* const context,
+        char const* const message)
 {
     start_testing();
 
     ++error_count;
-    eprintf("\nError in %s (%s:%d):\n", context, file, line);
+    fprintf(stderr, "\nError in %s (%s:%d)", context, file, line);
+
+    if (message) {
+        fprintf(stderr, ":\n  reason: %s\n", message);
+    } else {
+        fprintf(stderr, "\n");
+    }
+}
+
+void rtipd_test_log_perror(
+        char const* const file,
+        int         const line,
+        char const* const context)
+{
+    rtipd_test_log_error(file, line, context,
+                         errno ? strerror(errno) : NULL);
 }
 
 static const char* c_escape_of_char(char c) {

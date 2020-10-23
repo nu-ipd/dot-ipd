@@ -8,6 +8,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,226 +17,262 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define FD_COUNT          4
-#define FOR_FD(I)         for (size_t I = 0; I < FD_COUNT; ++I)
-#define COULD_NOT_EXEC    252
 #define READ_FD_BUF_LEN   256
+#define FD_COUNT          4
+#define COULD_NOT_DUP2    250
+#define COULD_NOT_CLOSE   251
+#define COULD_NOT_EXEC    252
+
 #define ARRAY_LEN(A)      (sizeof (A) / sizeof *(A))
+
+#define FOR_ARRAY(I, A)   for (size_t I = 0; I < ARRAY_LEN(A); ++i)
+
+#define WARN_IF(C) \
+    do { \
+        int warn_unless_errno_stash = errno; \
+        if (C) perror("warning"); \
+        errno = warn_unless_errno_stash; \
+    } while (0)
+
+typedef struct
+{
+    int a[FD_COUNT];
+} fd_set_t;
 
 static char const
 temp_template[] = "/tmp/libipd_check_exec.XXXXXX";
 
-static char* read_fd(int fd)
+static char const*
+child_status_string(int status) {
+    switch (status) {
+    case COULD_NOT_CLOSE:
+        return "could not close";
+    case COULD_NOT_DUP2:
+        return "could not dup2";
+    case COULD_NOT_EXEC:
+        return "could not exec";
+    default:
+        return "unknown failure";
+    }
+}
+
+static char*
+fdread_all(int* fd)
 {
-    if (lseek(fd, 0, SEEK_SET) < 0)
+    if (lseek(*fd, 0, SEEK_SET) < 0)
         goto could_not_lseek;
 
     struct buffer buf;
     if (!balloc(&buf, READ_FD_BUF_LEN))
         goto could_not_malloc;
 
-    FILE* fstream = fdopen(dup(fd), "r");
-    if (!fstream)
+    FILE* fin = fdopen(*fd, "r");
+    if (!fin)
         goto could_not_fdopen;
 
-    while(bfread(&buf, 1, fstream))
+    // Will be closed by fclose(fin):
+    *fd = -1;
+
+    while(bfread(&buf, 1, fin))
     { }
 
-    if (!feof(fstream))
+    if (!feof(fin))
         goto could_not_fread;
 
-    fclose(fstream);
+    WARN_IF( fclose(fin) == EOF );
+
     buf.data[buf.fill] = 0;
     return buf.data;
 
 could_not_fread:
-    fclose(fstream);
+    WARN_IF( fclose(fin) == EOF );
 
 could_not_fdopen:
     free(buf.data);
 
 could_not_malloc:
 could_not_lseek:
-    perror(NULL);
+    if (*fd >= 0) {
+        WARN_IF( close(*fd) < 0 );
+        *fd = -1;
+    }
+
     return NULL;
 }
 
-static int write_range(
-        int fd,
-        char const* begin,
-        char const* end)
+static bool
+fdwrite_string(int fd, char const* str)
 {
-    while (begin < end) {
-        int res = write(fd, begin, end - begin);
-        if (res < 0) {
-            if (errno != EINTR) return res;
-        } else {
-            begin += res;
-        }
+    if (fd < 0) {
+        return false;
     }
 
-    return 0;
+    FILE* fout = fdopen(fd, "w");
+    if (! fout) {
+        WARN_IF( close(fd) < 0 );
+        return false;
+    }
+
+    size_t length = strlen(str);
+    size_t written = fwrite(str, 1, length, fout);
+
+    WARN_IF( fclose(fout) == EOF );
+
+    return length == written;
 }
 
-static int write_string(int fd, char const* str)
+static int fput_cstrlit(FILE* fout, char const* str);
+
+static bool
+check_output_string(
+        char const *const file,
+        int         const line,
+        char const *const context,
+        char const *const descr,
+        char const *const expected,
+        int        *const fd)
 {
-    return write_range(fd, str, str + strlen(str));
-}
+    if (expected == ANY_OUTPUT) return true;
 
-static int fput_cstrlit(FILE* fout, const char* str);
-
-static void check_output_string(
-        const char* file, int line, const char* descr,
-        const char* expected, int fd, bool* saw_error)
-{
-    if (expected == ANY_OUTPUT) return;
-
-    char* out = read_fd(fd);
+    char* out = fdread_all(fd);
     if (!out) {
-        perror(NULL);
-        return;
+        rtipd_test_log_perror(file, line, context);
+        return false;
     }
 
     if (strcmp(out, expected)) {
-        if (*saw_error) {
-            eprintf("Additional check failure:\n");
-        } else {
-            rtipd_test_log_check(false, file, line);
-            *saw_error = true;
-        }
+        rtipd_test_log_check(false, file, line);
 
-        eprintf("  reason: mismatch in %s\n", descr);
+        fprintf(stderr, "  reason: %s had mismatch in %s\n",
+                context, descr);
 
-        eprintf("  have: ");
+        fprintf(stderr, "  have: ");
         fput_cstrlit(stderr, out);
-        eprintf("\n");
+        fprintf(stderr, "\n");
 
-        eprintf("  want: ");
+        fprintf(stderr, "  want: ");
         fput_cstrlit(stderr, expected);
-        eprintf("\n");
+        fprintf(stderr, "\n");
+
+        free(out);
+        return false;
     }
 
     free(out);
+    return true;
 }
 
-static void eprintf_argv(char const *const* argv)
+static int
+child_exec(fd_set_t* fd, const char* const argv[])
 {
-    eprintf("  argv[]: {\n");
-
-    while (*argv) {
-        eprintf("    ");
-        fput_cstrlit(stderr, *argv);
-        if (argv + 1) eprintf(",");
-        ++argv;
+    FOR_ARRAY (i, fd->a) {
+        if ( dup2(fd->a[i], i) < 0 ) return COULD_NOT_DUP2;
+        if ( close(fd->a[i]) < 0 ) return COULD_NOT_CLOSE;
     }
 
-    eprintf("  }\n");
-}
-static void do_check_exec(
-        char const* whoami,
-        char const* file,
-        int line,
-        char const* argv[],
-        const char             *in,
-        const char             *out,
-        const char             *err,
-        int                    code)
-{
-    int fd[FD_COUNT] = {-1};
-    int res;
+    execvp(argv[0], (char**)argv);
 
-    FOR_FD(i) {
+    return COULD_NOT_EXEC;
+}
+
+static void do_check_exec(
+        char const* const file,
+        int         const line,
+        char const* const context,
+        char const* const argv[],
+        char const* const in,
+        char const* const out,
+        char const* const err,
+        int         const code)
+{
+    bool passed = false;
+    fd_set_t fd = {{-1}};
+
+    FOR_ARRAY (i, fd.a) {
         char tempfile[sizeof temp_template];
         memcpy(tempfile, temp_template, sizeof tempfile);
 
-        fd[i] = mkstemp(tempfile);
-        if (fd[i] < 0) goto finish;
+        fd.a[i] = mkstemp(tempfile);
+        if (fd.a[i] < 0) goto sys_error;
 
-        unlink(tempfile);
+        WARN_IF( unlink(tempfile) < 0 );
     }
 
     if (in && in[0]) {
-        res = write_string(fd[0], in);
-        if (res < 0) goto finish;
+        bool success = fdwrite_string(dup(fd.a[0]), in);
+        if (! success) goto sys_error;
 
-        res = lseek(fd[0], 0, SEEK_SET);
-        if (res < 0) goto finish;
+        int res = lseek(fd.a[0], 0, SEEK_SET);
+        if (res < 0) goto sys_error;
     }
 
     pid_t pid = fork();
-    if (pid < 0) goto finish;
+    if (pid < 0) goto sys_error;
 
     if (pid == 0) {
-        FOR_FD(i) {
-            dup2(fd[i], i);
-            close(fd[i]);
-        }
-
-        execvp(argv[0], (char**)argv);
-
-        dup2(3, 2);
-        eprintf("%d %s\n", errno, strerror(errno));
-        exit(COULD_NOT_EXEC);
+        int status = child_exec(&fd, argv);
+        (void) fflush(stderr);
+        WARN_IF( dup2(3, 2) < 0 );
+        perror(context);
+        _Exit(status);
     }
 
     // Parent:
 
     int status;
-    res = waitpid(pid, &status, 0);
-    if (res < 0) goto finish;
+    if ( waitpid(pid, &status, 0) < 0 )
+        goto sys_error;
 
-    if (WIFEXITED(status) && WEXITSTATUS(status) == COULD_NOT_EXEC) {
-        rtipd_test_log_error("external program check", file, line);
-        char* msg = read_fd(fd[3]);
-        eprintf("%s: %s\n", argv[0], msg? msg : "could not exec");
+    int got_code = WEXITSTATUS(status);
+
+    if (WIFEXITED(status) && 
+            (got_code == COULD_NOT_CLOSE ||
+             got_code == COULD_NOT_DUP2 ||
+             got_code == COULD_NOT_EXEC))
+    {
+        char* msg = fdread_all(&fd.a[3]);
+        rtipd_test_log_error(file, line, context,
+                             msg && *msg
+                             ? msg
+                             : child_status_string(got_code));
         free(msg);
-        whoami = NULL;
         goto finish;
     }
 
-    bool saw_error = false;
-
     if (WIFSIGNALED(status)) {
-        rtipd_test_log_error("external program check", file, line);
-        saw_error = true;
-        eprintf("  reason: process killed by signal %d\n", WTERMSIG(status));
-        eprintf_argv(argv + 1);
+        int sig = WTERMSIG(status);
+        rtipd_test_log_error(file, line, context, "killed by signal");
+        fprintf(stderr, "  signal: %s (%d)\n", strsignal(sig), sig);
+        passed = false;
     }
 
-    check_output_string(file, line, "stdout",
-            out, fd[1], &saw_error);
-    check_output_string(file, line, "stderr",
-            err, fd[2], &saw_error);
+    passed &= check_output_string(file, line, context, "stdout", out, &fd.a[1]);
+    passed &= check_output_string(file, line, context, "stderr", err, &fd.a[2]);
 
-    int got_code = WEXITSTATUS(status);
     if ((code >= 0 && got_code != code) ||
             (code == ANY_EXIT_ERROR && got_code == 0)) {
-        if (saw_error) {
-            eprintf("Additional check failure:\n");
-        } else {
-            rtipd_test_log_check(false, file, line);
-            saw_error = true;
-        }
-
-        eprintf("  reason: exit code mismatch\n");
-        eprintf("  have: %d\n", got_code);
+        rtipd_test_log_check(false, file, line);
+        fprintf(stderr, "  reason: exit code mismatch\n");
+        fprintf(stderr, "  have: %d\n", got_code);
         if (code == ANY_EXIT_ERROR)
-            eprintf("  want: non-zero\n");
+            fprintf(stderr, "  want: non-zero\n");
         else
-            eprintf("  want: %d\n", code);
+            fprintf(stderr, "  want: %d\n", code);
+        passed = false;
     }
 
-    if (!saw_error) {
+    if (passed) {
         rtipd_test_log_check(true, file, line);
-        whoami = NULL; // success == no one to blame
     }
+
+    goto finish;
+
+sys_error:
+    rtipd_test_log_perror(file, line, context);
 
 finish:
-    if (whoami) perror(whoami);
-
-    FOR_FD(i) {
-        if (fd[i] < 0) break;
-        else close(fd[i]);
+    FOR_ARRAY (i, fd.a) {
+        WARN_IF( fd.a[i] >= 0 && close(fd.a[i]) < 0 );
     }
 }
 
@@ -243,25 +280,25 @@ void libipd_do_check_exec(
         char const             *file,
         int                     line,
         char const             *argv[],
-        const char             *in,
-        const char             *out,
-        const char             *err,
+        char const             *in,
+        char const             *out,
+        char const             *err,
         int                    code)
 {
-    do_check_exec("check_exec", file, line, argv, in, out, err, code);
+    do_check_exec(file, line, "CHECK_EXEC", argv, in, out, err, code);
 }
 
 void libipd_do_check_command(
         char const             *file,
         int                     line,
         char const             *command,
-        const char             *in,
-        const char             *out,
-        const char             *err,
+        char const             *in,
+        char const             *out,
+        char const             *err,
         int                    code)
 {
     char const* argv[] = {"/bin/sh", "-c", command, NULL};
-    do_check_exec("check_command", file, line, argv, in, out, err, code);
+    do_check_exec(file, line, "CHECK_COMMAND", argv, in, out, err, code);
 }
 
 #define PUT(C) \
@@ -270,7 +307,7 @@ void libipd_do_check_command(
         else ++count; \
     } while (false)
 
-static int fput_cstrlit(FILE* fout, const char* str)
+static int fput_cstrlit(FILE* fout, char const* str)
 {
     size_t count = 0;
 

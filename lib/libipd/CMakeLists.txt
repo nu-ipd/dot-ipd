@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(libIPD
-        VERSION 2020.3.5
+        VERSION 2020.3.6
         DESCRIPTION "A little library for IPD"
         LANGUAGES C)
 
