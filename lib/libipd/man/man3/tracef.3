@@ -1,17 +1,11 @@
 .\" Manual page for ipd.h
-.de my_br
-.  PD 0
-.  PP
-.  PD
-..
-.\"
 .TH TRACEF 3 "October 20, 2020" "libipd 2020.3" "IPD"
 .\"
-.SH "NAME"
+.SH NAME
 .B tracef
 \- a simple tracing facility
 .\"
-.SH "SYNOPSIS"
+.SH SYNOPSIS
 .nf
 .B "#define ENABLE_TRACEF"
 .B "#include <ipd.h>"
@@ -20,7 +14,7 @@
 \fBtracef\fR( \fIconst char * format\fR, \fI...\fR );
 .fi
 .\"
-.SH "DESCRIPTION"
+.SH DESCRIPTION
 This macro provides a simple tracing facility that is easily
 turned on and off without removing the tracing statements.
 The arguments to
@@ -48,7 +42,7 @@ see what\(aqs going on, and then disable the output without having to
 remove the all the calls to
 .BR tracef ().
 .\"
-.SH "EXAMPLE"
+.SH EXAMPLE
 .PP
 .nf
 // Comment out next line to suppress output:
@@ -62,7 +56,7 @@ remove the all the calls to
 }
 .fi
 .\"
-.SH "AUTHOR"
+.SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"

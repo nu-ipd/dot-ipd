@@ -1,0 +1,112 @@
+.\" Manual page for ipd.h
+.TH CHECK_COMMAND 3 "September 29, 2020" "libipd 2020.3" "IPD"
+.\"
+.SH NAME
+.BR CHECK_COMMAND ", " CHECK_EXEC
+\- simple whole-program testing
+.\"
+.SH SYNOPSIS
+.nf
+.B "#include <ipd.h>"
+.P
+\fBvoid CHECK_COMMAND\fR(
+        \fBconst char *\fIcommand\fR,
+        \fBconst char *\fIactual_input\fR,
+        \fBconst char *\fIexpected_output\fR,
+        \fBconst char *\fIexpected_error\fR,
+        \fBint\fR         \fIexpected_exit_code\fR);
+.P
+\fBvoid CHECK_EXEC\fR(
+        \fBconst char *\fIargv\fR[],
+        \fBconst char *\fIactual_input\fR,
+        \fBconst char *\fIexpected_output\fR,
+        \fBconst char *\fIexpected_error\fR,
+        \fBint\fR         \fIexpected_exit_code\fR);
+.P
+\fBextern const char *\fRANY_OUTPUT;
+.P
+\fBextern int\fR ANY_EXIT, ANY_EXIT_ERROR;
+.fi
+.\"
+.SH DESCRIPTION
+These macros are for testing whole programs from outside, rather than
+functions within the same program. For unit testing of functions,
+see \fBCHECK\fR(3).
+.P
+The two macro forms differ only in their first argument, which
+determines the program-under-test.
+.BR CHECK_COMMAND ()'s,
+first argument is a single string contain a shell command, which
+will be interpreted by /\fIbin\fR/\fIsh\fR.
+.BR CHECK_EXEC ()'s,
+first argument is a \fBNULL\fR-terminated array of strings
+that specifies the program to run as its \fB0\Rth element,
+and also provides
+the \fIargv\fR for the new process.
+.P
+The second argument, \fIactual_input\fR, provides the
+program-under-test's standard input.
+.P
+The third and fourth arguments, \fIexpected_output\fR and
+\fIexpected_error\fR, specify the output that we want the program to
+produce on its standard output and standard error streams,
+respectively. For either or both of
+these arguments, you can pass the
+constant \fIANY_OUTPUT\fR to say that
+that any output should be accepted for that stream.
+.P
+The fifth argument, \fIexpected_exit_code\fR, specifies the status code
+that you expect the program-under-test to exit with. You may provide the
+constant \fIANY_EXIT\fR to say that any status code
+is okay, or the constant \fIANY_EXIT_ERROR\fR to say that
+this check should pass with any non-zero exit code.
+.\"
+.SH EXAMPLE
+Suppose there is a program named \fIoverlapped\fR in the
+current directory that should have the following behavior.
+If sent the three lines
+.RS 4
+.P
+.nf
+0 0 10
+5 0 10
+100 0 10
+.fi
+.RE
+.P
+to its standard input, then it should print the output
+.RS 4
+.P
+.nf
+overlapped
+not overlapped
+.fi
+.RE
+.P
+to its standard output, and then exit with status 0. You could verify
+this behavior with a check like this:
+.RS 4
+.P
+.nf
+\fBCHECK_COMMAND\fR("./overlapped",
+              "0 0 10\fI\\n\fR5 0 10\fI\\n\fR100 0 10\fI\\n\fR",
+              "overlapped\fI\\n\fRnot overlapped\fI\\n\fR",
+              "",
+              \fB0\fR);
+.fi
+.RE
+.\"
+.SH BUGS
+Probably many, but none yet known.
+.\"
+.SH AUTHOR
+Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
+.\"
+.SH "SEE ALSO"
+.BR CHECK (3),
+.BR assert (3),
+.BR dup2 (2),
+.BR execve (2),
+.BR fork (2),
+.BR mkstemp (3),
+.BR waitpid (2)

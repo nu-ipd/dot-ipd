@@ -11,13 +11,13 @@
 .nf
 .B "#include <ipd.h>"
 .B "#include <ipd_alloc_limit.h>"
-.PP
+.P
 .I void
 \fBalloc_limit_set_peak\fR( \fIsize_t size\fR );
-.PP
+.P
 .I void
 \fBalloc_limit_set_total\fR( \fIsize_t size\fR );
-.PP
+.P
 .I void
 \fBalloc_limit_set_no_limit\fR( \fIvoid\fR );
 .fi
@@ -31,7 +31,7 @@ will cause
 to return
 .I NULL
 rather than exceed the limit.
-.PP
+.P
 This API supports setting two kinds of allocation limits:
 .IP \(bu
 A
@@ -44,7 +44,7 @@ A
 caps the total number of bytes allocated, which means that
 allocations are charged against the limit, but deallocations do not
 restore the limit.
-.PP
+.P
 To set a peak allocation limit of
 .I n
 bytes, call
@@ -57,7 +57,7 @@ To remove the current allocation limit, if any, and restore
 .BR malloc (3)\(aqs
 usual behavior, call
 .BR alloc_limit_set_no_limit ().
-.PP
+.P
 When an allocation limit is set, it applies only to future allocations.
 This means that when you call
 .B alloc_limit_set_peak
@@ -65,14 +65,20 @@ or
 .BR alloc_limit_set_total ,
 earlier allocations are forgotten and will not count against
 the new allocation limit.
-.PP
+.P
 Note that the accounting required by the above functions happens
 only in files where
 .B <ipd.h>
 is
 .BR #include d.
 This means that you need
+.RS 4
+.P
+.nf
 .B "#include <ipd.h>"
+.fi
+.RE
+.P
 in every source file that performs allocation or deallocation
 in order to use these functions effectively.
 .\"
@@ -82,7 +88,7 @@ individual functions, but not for testing a whole program\(aqs
 out-of-memory behavior. For testing a whole program you can set a peak
 or total allocation limit at program startup by defining an environment
 variable from outside your program.
-.PP
+.P
 In particular, these two environment variables may be defined
 in order to set a allocation limit:
 .IP \(bu
@@ -91,7 +97,7 @@ in order to set a allocation limit:
 .IP \(bu
 .I RTIPD_ALLOC_LIMIT_TOTAL
 \- Sets a total allocation limit.
-.PP
+.P
 The value of either variable may
 be a number to specify the limit in bytes,
 or a number followed by the letter
@@ -100,15 +106,17 @@ or a number followed by the letter
 or
 .I G
 to specify the limit in KiB, MiB, or GiB, respectively.
-.PP
+.P
 For example, to run the program
 .I ./count
 with a peak allocation limit of 500 bytes, you could run
 .RS 4
-.PP
+.P
+.nf
 % \fIRTIPD_ALLOC_LIMIT_PEAK\fR=\fI500\fR \fB./count\fR
+.fi
 .RE
-.PP
+.P
 If both of the above environment variables are set then
 .I RTIPD_ALLOC_LIMIT_TOTAL
 takes precedence.
@@ -120,7 +128,7 @@ The treatment of
 is confusing.
 And probably several others.
 .\"
-.SH "AUTHOR"
+.SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"

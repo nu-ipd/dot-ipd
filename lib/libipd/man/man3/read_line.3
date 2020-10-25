@@ -1,25 +1,25 @@
 .\" Manual page for ipd.h
 .TH READ_LINE 3 "January 18, 2019" "libipd 2020.3" "IPD"
 .\"
-.SH "NAME"
+.SH NAME
 .BR read_line ", " fread_line ", " prompt_line
 \- easy line-based input
 .\"
-.SH "SYNOPSIS"
+.SH SYNOPSIS
 .nf
 .B "#include <ipd.h>"
-.PP
+.P
 .I "char *"
 \fBfread_line\fR( \fIFILE * stream\fR );
-.PP
+.P
 .I "char *"
 \fBread_line\fR( \fIvoid\fR );
-.PP
+.P
 .I "char *"
 \fBprompt_line\fR( \fIconst char * format\fR, \fI...\fR );
 .fi
 .\"
-.SH "DESCRIPTION"
+.SH DESCRIPTION
 These three functions read a line at a time either from
 .BR stdin (4),
 as
@@ -55,7 +55,7 @@ doesn\(aqt end with a newline.
 .BR prompt_line ()
 takes a format string and arguments to interpolate, in the style of
 .BR printf (3).
-.SH "ERRORS"
+.SH ERRORS
 If any of the three functions fails to allocate memory,
 it prints an error message
 to
@@ -64,13 +64,13 @@ and calls
 .BR exit (3)
 with an error code of 1.
 .\"
-.SH "BUGS"
+.SH BUGS
 Almost all uses of
 .B prompt_line
 on IPD homework assignments are bugs, because none of the
 assignments specify prompts, and all are strict about output.
 .\"
-.SH "AUTHOR"
+.SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
 .SH "SEE ALSO"
