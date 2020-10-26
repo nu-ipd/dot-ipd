@@ -6,10 +6,10 @@
 \- simple whole-program testing
 .\"
 .SH SYNOPSIS
-.nf
 .B "#include <ipd.h>"
 .PP
 void
+.br
 \fBCHECK_COMMAND\fR(
         const char * \fIcommand\fR,
         const char * \fIactual_input\fR,
@@ -18,6 +18,7 @@ void
         int          \fIexpected_exit_code\fR );
 .PP
 void
+.br
 \fBCHECK_EXEC\fR(
         const char * \fIargv\fI[]\fR,
         const char * \fIactual_input\fR,
@@ -28,7 +29,6 @@ void
 extern const char * \fBANY_OUTPUT\fR;
 .PP
 extern int          \fBANY_EXIT\fR, \fBANY_EXIT_ERROR\fR;
-.fi
 .\"
 .SH DESCRIPTION
 These macros are for testing whole programs from outside, rather than
