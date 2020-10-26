@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(Catch2
-        VERSION 2020.1.1
+        VERSION 2020.2.0
         DESCRIPTION "A reusable main for Catch2"
         LANGUAGES CXX)
 
@@ -9,8 +9,7 @@ project(Catch2
 ###
 
 add_library(catch
-        include/catch.hxx
-        src/catch-main.cxx)
+        src/catch.cxx)
 
 set_target_properties(catch PROPERTIES
         CXX_STANDARD            14
