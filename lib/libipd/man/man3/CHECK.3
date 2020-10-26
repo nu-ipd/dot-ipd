@@ -8,35 +8,33 @@
 \- simple unit testing
 .\"
 .SH SYNOPSIS
-.nf
 .B "#include <ipd.h>"
-.P
+.PP
 \fBCHECK\fR( \fIbool_expression\fR );
-.P
+.PP
 \fBCHECK_CHAR\fR( \fIchar_expression\fR, \fIchar_expression\fR );
-.P
+.PP
 \fBCHECK_INT\fR( \fIint_expression\fR, \fIint_expression\fR );
-.P
+.PP
 \fBCHECK_UINT\fR( \fIunsigned_expression\fR, \fIunsigned_expression\fR );
-.P
+.PP
 \fBCHECK_SIZE\fR( \fIsize_expression\fR, \fIsize_expression\fR );
-.P
+.PP
 \fBCHECK_STRING\fR( \fIstring_expression\fR, \fIstring_expression\fR );
-.P
+.PP
 \fBCHECK_POINTER\fR( \fIptr_expression\fR, \fIptr_expression\fR );
-.fi
 .\"
 .SH DESCRIPTION
 Each of these macros asserts the truth of some condition, registering
 a passed test if the condition is true, or a failed test if the
 condition is false. They also register an exit handler, in order to
 print a summary of the test results on program exit.
-.P
+.PP
 The first macro form,
 .BR CHECK (),
 takes the condition that is expected to hold as its only argument. The
 test passes if the argument expression evaluates to a true value.
-.P
+.PP
 The remaining forms perform comparisons between the values of two
 expressions; except for
 .BR CHECK_STRING (),
@@ -44,13 +42,15 @@ they succeed when the values are equal. When a
 comparison test fails, it prints the two values that differed
 unexpectedly. For example, to test a factorial function \fIfact\fR,
 you could write
-.RS 4
+.PP
+.in +4n
 .nf
-.P
-\fBCHECK_UINT\fR( fact(5), 120 );
+.EX
+\fBCHECK_UINT\fR( \fIfact\fR(5), 120 );
+.EE
 .fi
-.RE
-.P
+.in
+.PP
 The
 .BR CHECK_STRING ()
 form does not compare the pointer values it is given, but the
@@ -84,7 +84,7 @@ macros also work on types \fBlong\fR and
 .SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR CHECK (3),
 .BR assert (3),
 .BR strcmp (3)

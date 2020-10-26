@@ -8,31 +8,33 @@
 .SH SYNOPSIS
 .nf
 .B "#include <ipd.h>"
-.P
-\fBvoid CHECK_COMMAND\fR(
-        \fBconst char *\fIcommand\fR,
-        \fBconst char *\fIactual_input\fR,
-        \fBconst char *\fIexpected_output\fR,
-        \fBconst char *\fIexpected_error\fR,
-        \fBint\fR         \fIexpected_exit_code\fR);
-.P
-\fBvoid CHECK_EXEC\fR(
-        \fBconst char *\fIargv\fR[],
-        \fBconst char *\fIactual_input\fR,
-        \fBconst char *\fIexpected_output\fR,
-        \fBconst char *\fIexpected_error\fR,
-        \fBint\fR         \fIexpected_exit_code\fR);
-.P
-\fBextern const char *\fRANY_OUTPUT;
-.P
-\fBextern int\fR ANY_EXIT, ANY_EXIT_ERROR;
+.PP
+void
+\fBCHECK_COMMAND\fR(
+        const char * \fIcommand\fR,
+        const char * \fIactual_input\fR,
+        const char * \fIexpected_output\fR,
+        const char * \fIexpected_error\fR,
+        int          \fIexpected_exit_code\fR );
+.PP
+void
+\fBCHECK_EXEC\fR(
+        const char * \fIargv\fI[]\fR,
+        const char * \fIactual_input\fR,
+        const char * \fIexpected_output\fR,
+        const char * \fIexpected_error\fR,
+        int          \fIexpected_exit_code\fR );
+.PP
+extern const char * \fBANY_OUTPUT\fR;
+.PP
+extern int          \fBANY_EXIT\fR, \fBANY_EXIT_ERROR\fR;
 .fi
 .\"
 .SH DESCRIPTION
 These macros are for testing whole programs from outside, rather than
 functions within the same program. For unit testing of functions,
 see \fBCHECK\fR(3).
-.P
+.PP
 The two macro forms differ only in their first argument, which
 determines the program-under-test.
 .BR CHECK_COMMAND 's
@@ -43,10 +45,10 @@ first argument is a \fBNULL\fR-terminated array of strings
 that specifies the program to run as its \fB0\fRth element,
 and also provides
 the \fIargv\fR for the new process.
-.P
+.PP
 The second argument, \fIactual_input\fR, provides the
 program-under-test's standard input.
-.P
+.PP
 The third and fourth arguments, \fIexpected_output\fR and
 \fIexpected_error\fR, specify the output that we want the program to
 produce on its standard output and standard error streams,
@@ -54,7 +56,7 @@ respectively. For either or both of
 these arguments, you can pass the
 constant \fIANY_OUTPUT\fR to say that
 that any output should be accepted for that stream.
-.P
+.PP
 The fifth argument, \fIexpected_exit_code\fR, specifies the status code
 that you expect the program-under-test to exit with. You may provide the
 constant \fIANY_EXIT\fR to say that any status code
@@ -65,36 +67,42 @@ this check should pass with any non-zero exit code.
 Suppose there is a program named \fIoverlapped\fR in the
 current directory that should have the following behavior.
 If sent the three lines
-.RS 4
-.P
+.PP
+.in +4n
 .nf
-0 0 10
-5 0 10
-100 0 10
+.EX
+.B "0 0 10"
+.B "5 0 10"
+.B "100 0 10"
+.EE
 .fi
-.RE
-.P
+.in
+.PP
 to its standard input, then it should print the output
-.RS 4
-.P
+.PP
+.in +4n
 .nf
-overlapped
-not overlapped
+.EX
+.I overlapped
+.I not overlapped
+.EE
 .fi
-.RE
-.P
+.in
+.PP
 to its standard output, and then exit with status 0. You could verify
 this behavior with a check like this:
-.RS 4
-.P
+.PP
+.in +4n
 .nf
-\fBCHECK_COMMAND\fR("./overlapped",
-              "0 0 10\fI\\n\fR5 0 10\fI\\n\fR100 0 10\fI\\n\fR",
-              "overlapped\fI\\n\fRnot overlapped\fI\\n\fR",
-              "",
-              \fB0\fR);
+.EX
+\fBCHECK_COMMAND\fR( "./overlapped",
+               "0 0 10\fI\\n\fR5 0 10\fI\\n\fR100 0 10\fI\\n\fR",
+               "overlapped\fI\\n\fRnot overlapped\fI\\n\fR",
+               "",
+               0 );
+.EE
 .fi
-.RE
+.in
 .\"
 .SH BUGS
 Probably many, but none yet known.
@@ -102,7 +110,7 @@ Probably many, but none yet known.
 .SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR CHECK (3),
 .BR assert (3),
 .BR dup2 (2),

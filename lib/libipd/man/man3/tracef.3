@@ -10,8 +10,8 @@
 .B "#define ENABLE_TRACEF"
 .B "#include <ipd.h>"
 .PP
-.I void
-\fBtracef\fR( \fIconst char * format\fR, \fI...\fR );
+void
+\fBtracef\fR( const char * \fIformat\fR, \fI...\fR );
 .fi
 .\"
 .SH DESCRIPTION
@@ -45,21 +45,23 @@ remove the all the calls to
 .SH EXAMPLE
 .PP
 .nf
-// Comment out next line to suppress output:
+.EX
+/* Comment out next line to suppress output: */
 .B "#define ENABLE_TRACEF"
 .B "#include <ipd.h>"
-.PP
-\fIint\fR main( \fIvoid\fR )
+
+int \fImain\fR( void )
 {
-    \fIint\fR x = 3, y = 4;
-    \fBtracef\fR("%d + %d == %d\\n", x, y, x + y)\;
+    int \fIx\fR = 3, \fIy\fR = 4;
+    \fBtracef\fR("%d + %d == %d\fI\\n\fR", \fIx\fR, \fIy\fR, \fIx\fR + \fIy\fR)\;
 }
+.EE
 .fi
 .\"
 .SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR fprintf (3),
 .BR printf (3),
 .BR stderr (4)

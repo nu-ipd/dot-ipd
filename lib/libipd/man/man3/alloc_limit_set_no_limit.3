@@ -11,15 +11,15 @@
 .nf
 .B "#include <ipd.h>"
 .B "#include <ipd_alloc_limit.h>"
-.P
-.I void
-\fBalloc_limit_set_peak\fR( \fIsize_t size\fR );
-.P
-.I void
-\fBalloc_limit_set_total\fR( \fIsize_t size\fR );
-.P
-.I void
-\fBalloc_limit_set_no_limit\fR( \fIvoid\fR );
+.PP
+void
+\fBalloc_limit_set_peak\fR( size_t \fIsize\fR );
+.PP
+void
+\fBalloc_limit_set_total\fR( size_t \fIsize\fR );
+.PP
+void
+\fBalloc_limit_set_no_limit\fR( void );
 .fi
 .\"
 .SH DESCRIPTION
@@ -31,7 +31,7 @@ will cause
 to return
 .I NULL
 rather than exceed the limit.
-.P
+.PP
 This API supports setting two kinds of allocation limits:
 .IP \(bu
 A
@@ -44,7 +44,7 @@ A
 caps the total number of bytes allocated, which means that
 allocations are charged against the limit, but deallocations do not
 restore the limit.
-.P
+.PP
 To set a peak allocation limit of
 .I n
 bytes, call
@@ -57,7 +57,7 @@ To remove the current allocation limit, if any, and restore
 .BR malloc (3)\(aqs
 usual behavior, call
 .BR alloc_limit_set_no_limit ().
-.P
+.PP
 When an allocation limit is set, it applies only to future allocations.
 This means that when you call
 .B alloc_limit_set_peak
@@ -65,20 +65,22 @@ or
 .BR alloc_limit_set_total ,
 earlier allocations are forgotten and will not count against
 the new allocation limit.
-.P
+.PP
 Note that the accounting required by the above functions happens
 only in files where
 .B <ipd.h>
 is
 .BR #include d.
 This means that you need
-.RS 4
-.P
+.PP
+.in +4n
 .nf
+.EX
 .B "#include <ipd.h>"
+.EE
 .fi
-.RE
-.P
+.in
+.PP
 in every source file that performs allocation or deallocation
 in order to use these functions effectively.
 .\"
@@ -88,7 +90,7 @@ individual functions, but not for testing a whole program\(aqs
 out-of-memory behavior. For testing a whole program you can set a peak
 or total allocation limit at program startup by defining an environment
 variable from outside your program.
-.P
+.PP
 In particular, these two environment variables may be defined
 in order to set a allocation limit:
 .IP \(bu
@@ -97,7 +99,7 @@ in order to set a allocation limit:
 .IP \(bu
 .I RTIPD_ALLOC_LIMIT_TOTAL
 \- Sets a total allocation limit.
-.P
+.PP
 The value of either variable may
 be a number to specify the limit in bytes,
 or a number followed by the letter
@@ -106,17 +108,19 @@ or a number followed by the letter
 or
 .I G
 to specify the limit in KiB, MiB, or GiB, respectively.
-.P
+.PP
 For example, to run the program
 .I ./count
 with a peak allocation limit of 500 bytes, you could run
-.RS 4
-.P
+.PP
+.in +4n
 .nf
-% \fIRTIPD_ALLOC_LIMIT_PEAK\fR=\fI500\fR \fB./count\fR
+.EX
+% \fBRTIPD_ALLOC_LIMIT_PEAK=500 ./count\fR
+.EE
 .fi
-.RE
-.P
+.in
+.PP
 If both of the above environment variables are set then
 .I RTIPD_ALLOC_LIMIT_TOTAL
 takes precedence.
@@ -131,7 +135,7 @@ And probably several others.
 .SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR calloc (3),
 .BR free (3),
 .BR malloc (3),

@@ -8,15 +8,15 @@
 .SH SYNOPSIS
 .nf
 .B "#include <ipd.h>"
-.P
-.I "char *"
-\fBfread_line\fR( \fIFILE * stream\fR );
-.P
-.I "char *"
-\fBread_line\fR( \fIvoid\fR );
-.P
-.I "char *"
-\fBprompt_line\fR( \fIconst char * format\fR, \fI...\fR );
+.PP
+char *
+\fBfread_line\fR( FILE * \fIstream\fR );
+.PP
+char *
+\fBread_line\fR( void );
+.PP
+char *
+\fBprompt_line\fR( const char * \fIformat\fR, \fI...\fR );
 .fi
 .\"
 .SH DESCRIPTION
@@ -73,7 +73,7 @@ assignments specify prompts, and all are strict about output.
 .SH AUTHOR
 Jesse Tov <\fIjesse@cs\.northwestern\.edu\fR>
 .\"
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR fflush (3),
 .BR free (3),
 .BR getline (3),
