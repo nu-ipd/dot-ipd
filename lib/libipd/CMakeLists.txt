@@ -16,6 +16,10 @@ add_library(ipd
         src/replace_tmpnam.c
         src/test_rt.c)
 
+if(NOT WIN32)
+    target_compile_definitions(ipd PUBLIC LIBIPD_HAS_POSIX)
+endif()
+
 set_target_properties(ipd PROPERTIES
         C_STANDARD            11
         C_STANDARD_REQUIRED   On

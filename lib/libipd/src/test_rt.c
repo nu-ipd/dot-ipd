@@ -14,8 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sys/types.h>
-#include <sys/wait.h>
+#ifdef LIBIPD_HAS_POSIX
+#   include <sys/types.h>
+#   include <sys/wait.h>
+#endif
 
 #define NORMAL  "\33[0m"
 #define RED     "\33[0;31m"
@@ -207,6 +209,72 @@ static void color_word(const char* color, const char* word)
     fflush(stdout);
 }
 
+enum test_outcome
+{
+    OUTCOME_PASS = 0,
+    OUTCOME_FAIL = 1,
+    OUTCOME_ERROR = 2,
+    OUTCOME_CRASH,
+    OUTCOME_OS_ERROR,
+};
+
+#ifdef LIBIPD_HAS_POSIX
+static enum test_outcome
+call_test_function(void (*test_fn)(void))
+{
+    pid_t pid = fork();
+    if (pid < 0) return OUTCOME_OS_ERROR;
+
+    if (pid == 0) {
+        pass_count = fail_count = error_count = 0;
+
+        test_fn();
+
+        // Don't run our exit handler in here.
+        tests_enabled = false;
+
+        if (error_count) exit(OUTCOME_ERROR);
+        else if (fail_count) exit(OUTCOME_FAIL);
+        else exit(OUTCOME_PASS);
+    }
+
+    int status;
+    int res = waitpid(pid, &status, 0);
+    if (res < 0) return OUTCOME_OS_ERROR;
+
+    if (WIFEXITED(status)) {
+        switch (WEXITSTATUS(status)) {
+        case 0: return OUTCOME_PASS;
+        case 1: return OUTCOME_FAIL;
+        default: return OUTCOME_ERROR;
+        }
+    }
+
+    if (WIFSIGNALED(status)) {
+        return OUTCOME_CRASH;
+    }
+
+    // impossible?
+    return OUTCOME_OS_ERROR;
+}
+#else // LIBIPD_HAS_POSIX
+static enum test_outcome
+call_test_function(void (*test_fn)(void))
+{
+    unsigned old_fail_count = fail_count,
+             old_error_count = error_count;
+
+    test_fn();
+
+    if (error_count > old_error_count)
+        return OUTCOME_ERROR;
+    else if (fail_count > old_fail_count)
+        return OUTCOME_FAIL;
+    else
+        return OUTCOME_PASS;
+}
+#endif // LIBIPD_HAS_POSIX
+
 bool libipd_do_run_test(
         void (*test_fn)(void),
         char const* source_expr,
@@ -221,51 +289,38 @@ bool libipd_do_run_test(
     printf("%s... ", source_expr);
     fflush(stdout);
 
-    pid_t pid = fork();
-    if (pid < 0) goto bad_error;
+    enum test_outcome outcome = call_test_function(test_fn);
 
-    if (pid == 0) {
-        pass_count = fail_count = error_count = 0;
+    switch (outcome) {
+    case OUTCOME_PASS:
+        color_word(use_color ? GREEN : NULL, "passed");
+        ++pass_count;
+        return true;
 
-        test_fn();
+    case OUTCOME_FAIL:
+        printf("\n%s ", source_expr);
+        color_word(use_color ? RED : NULL, "failed");
+        ++fail_count;
+        return false;
 
-        // Don't run our exit handler in here.
-        tests_enabled = false;
+    case OUTCOME_ERROR:
+        printf("\n%s ", source_expr);
+        color_word(use_color ? RVRED : NULL, "errored");
+        ++error_count;
+        return false;
 
-        if (error_count) exit(2);
-        else if (fail_count) exit(1);
-        else exit(0);
+    case OUTCOME_CRASH:
+        printf("\n%s ", source_expr);
+        color_word(use_color ? RVRED : NULL, "crashed");
+        ++error_count;
+        return false;
+
+    default:
+        printf("\nunexpected error:\n");
+        fflush(stdout);
+        perror("RUN_TEST");
+        exit(11);
     }
-
-    int status;
-    int res = waitpid(pid, &status, 0);
-    if (res < 0) goto bad_error;
-
-    if (WIFEXITED(status)) {
-        switch (WEXITSTATUS(status)) {
-        case 0:
-            color_word(use_color ? GREEN : NULL, "passed");
-            ++pass_count;
-            return true;
-
-        case 1:
-            printf("\n%s ", source_expr);
-            color_word(use_color ? RED : NULL, "failed");
-            ++fail_count;
-            return false;
-        }
-    }
-
-    printf("\n%s ", source_expr);
-    color_word(use_color ? RVRED : NULL, "errored");
-    ++error_count;
-    return false;
-
-bad_error:
-    printf("\nunexpected error:\n");
-    fflush(stdout);
-    perror("RUN_TEST");
-    exit(11);
 }
 
 bool libipd_do_check(

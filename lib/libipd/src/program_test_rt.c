@@ -1,6 +1,8 @@
-#define _XOPEN_SOURCE 700
+#ifdef LIBIPD_HAS_POSIX
+
 #define LIBIPD_RAW_ALLOC
 #define LIBIPD_RAW_EXIT
+#define _XOPEN_SOURCE 700
 
 #include "ipd.h"
 #include "buffer.h"
@@ -25,7 +27,7 @@
 
 #define ARRAY_LEN(A)      (sizeof (A) / sizeof *(A))
 
-#define FOR_ARRAY(I, A)   for (size_t I = 0; I < ARRAY_LEN(A); ++i)
+#define FOR_ARRAY(I, A)   for (size_t I = 0; I < ARRAY_LEN(A); ++I)
 
 #define WARN_IF(C) \
     do { \
@@ -348,3 +350,9 @@ static int fput_cstrlit(FILE* fout, char const* str)
 
     return count;
 }
+
+#else
+
+void* program_test_rt_needs_to_define_something____;
+
+#endif // LIBIPD_HAS_POSIX
