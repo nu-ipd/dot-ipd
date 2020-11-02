@@ -1,6 +1,79 @@
 # Some helper functions.
 cmake_minimum_required(VERSION 3.10)
 
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+# target_supported_c_compile_options(target option ...)
+#
+# Adds to the target all options that are supported by the
+# C compiler.
+function(target_supported_c_compile_options target)
+    set(scope PRIVATE)
+    foreach(flag ${ARGN})
+        string(TOUPPER "CFLAG_${flag}_OKAY" sym)
+        string(REGEX REPLACE "[-=_]+" "_" sym "${sym}")
+        check_c_compiler_flag(${flag} ${sym})
+        if(${sym})
+            target_compile_options(${target} ${scope} ${flag})
+        endif()
+    endforeach()
+endfunction()
+
+# target_supported_c_options(target option ...)
+#
+# Adds to the target all options that are supported by the
+# C compiler and linker.
+function(target_supported_c_options target)
+    set(scope PRIVATE)
+    set(original_flags ${CMAKE_C_FLAGS})
+    foreach(flag ${ARGN})
+        string(TOUPPER "LDFLAG_${flag}_OKAY" sym)
+        string(REGEX REPLACE "[-=_]+" "_" sym "${sym}")
+        set(CMAKE_C_FLAGS "${original_flags} ${flag}")
+        check_c_source_compiles("int main(){}" ${sym})
+        if(${sym})
+            target_compile_options(${target} ${scope} ${flag})
+            target_link_options(${target} ${scope} ${flag})
+        endif()
+    endforeach()
+endfunction()
+
+# target_supported_cxx_compile_options(target option ...)
+#
+# Adds to the target all options that are supported by the
+# C++ compiler.
+function(target_supported_cxx_compile_options target)
+    set(scope PRIVATE)
+    foreach(flag ${ARGN})
+        string(TOUPPER "CXXFLAG_${flag}_OKAY" sym)
+        string(REGEX REPLACE "[-=_]+" "_" sym "${sym}")
+        check_cxx_compiler_flag(${flag} ${sym})
+        if(${sym})
+            target_compile_options(${target} ${scope} ${flag})
+        endif()
+    endforeach()
+endfunction()
+
+# target_supported_cxx_options(target option ...)
+#
+# Adds to the target all options that are supported by the
+# C++ compiler and linker.
+function(target_supported_cxx_options target)
+    set(scope PRIVATE)
+    set(original_flags ${CMAKE_CXX_FLAGS})
+    foreach(flag ${ARGN})
+        string(TOUPPER "LDXXFLAG_${flag}_OKAY" sym)
+        string(REGEX REPLACE "[-=_]+" "_" sym "${sym}")
+        set(CMAKE_CXX_FLAGS "${original_flags} ${flag}")
+        check_cxx_source_compiles("int main(){}" ${sym})
+        if(${sym})
+            target_compile_options(${target} ${scope} ${flag})
+            target_link_options(${target} ${scope} ${flag})
+        endif()
+    endforeach()
+endfunction()
+
 # find_local_package(name dir)
 #
 # Look for an installed package ${name}, otherwise load the vendored
