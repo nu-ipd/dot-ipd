@@ -128,7 +128,7 @@ function(add_cxx_test_program name)
     target_compile_definitions(${name} PRIVATE IPD_TESTING)
     target_link_libraries(${name} catch)
     add_test(Test_${name} ${name})
-endfunction(add_cxx_test_program)
+endfunction()
 
 
 ###
@@ -148,11 +148,11 @@ endfunction()
 # Common functionality for `add_*_program` forms.
 function(_ipd_add_program lang target)
     set(flags "ASAN;NO_UBSAN;")
-    if(lang EQUAL "CXX")
+    if(lang STREQUAL "CXX")
         set(cee 0)
         set(cxx 1)
         set(flags "CXX17;CXX20;${flags}")
-    elseif(lang EQUAL "C")
+    elseif(lang STREQUAL "C")
         set(cee 1)
         set(cxx 0)
     else()
