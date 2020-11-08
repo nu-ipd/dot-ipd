@@ -127,7 +127,7 @@ function(add_cxx_test_program name)
     add_cxx_program(${name} ${ARGN})
     target_compile_definitions(${name} PRIVATE IPD_TESTING)
     target_link_libraries(${name} catch)
-    add_test(Test_${name} ${name})
+    catch_discover_tests(${name})
 endfunction()
 
 
